@@ -1,0 +1,34 @@
+C+ app/application.cpp
+C+ /opt/sming/Sming/appinit/user_main.cpp
+AR out/build/app_app.a
+LD out/build/app.out
+------------------------------------------------------------------------------
+Section info:
+if [ -f "out/firmware/fwMeminfo.new" ]; then \
+		cat out/firmware/fwMeminfo.new; \
+	fi
+
+out/build/app.out:     file format elf32-xtensa-le
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .data         0000053c  3ffe8000  3ffe8000  000000e0  2**4
+                  CONTENTS, ALLOC, LOAD, DATA
+  1 .rodata       00001b4c  3ffe8540  3ffe8540  00000620  2**4
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .bss          00009db8  3ffea098  3ffea098  00002178  2**4
+                  ALLOC
+  4 .irom0.text   00036458  40209000  40209000  000076a0  2**4
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .text         00005525  40100000  40100000  00002178  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+------------------------------------------------------------------------------
+# Generating image...
+/opt/esp-open-sdk/esptool/esptool.py elf2image out/build/app.out -ff 40m -fm qio -fs 4m -o out/firmware/
+Generate firmware images successully in folder out/firmware.
+Done
+# Generating spiffs_bin
+Checking for spiffs files
+No files found in ./files.
+Creating empty spiff_rom.bin (16384 bytes)
+spiff_rom.bin---------->0x40000
