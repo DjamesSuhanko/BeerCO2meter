@@ -40,7 +40,7 @@
         <h2>Bem-vindo à interface do seu monitor de carbonatação!</h2>
         <p class="lead" align="justify">A partir de agora você não precisa mais se preocupar, seu controle será absoluto. Chega de manômetro de borracharia, certo?</p>
 		<p align="justify">
-		Se desejar um retorno visual constante, basta ligar o LED. Quando chegar na carbonatação correta, ele permanecerá aceso.
+		Se desejar um retorno visual constante, basta ligar o LED. Quando chegar na carbonatação correta, ele permanecerá aceso. O status atual do led é <b> {LED_STATUS} </b>.
 		</p>
         <p>
 			<a class="btn btn-lg btn-success" href="?led=on" role="button">Led ON</a>
@@ -49,7 +49,7 @@
 		<p align="justify">No momento a pressão medida está em <b> {PSI_CARBON} PSI </b>. Essa é a unidade utilizada para fazer a medição do volume de CO2 da sua cerveja, conjuntamente à temperatura atual do ambiente.
 		<br/>
 		A temperatura local nesse momento é de <b> {TEMPERATURE} C</b>.<br/>
-		O estilo monitorado no momento é: <b> {BEER_STYLE} </b><br/>
+		Se você acabou de escolher o estilo, ele aparece aqui agora: <b> {BEER_STYLE} </b><br/>
 		Para atingir o nível de carbonatação desejada, no momento é necessário <b> {PSI_TO_TARGET} PSI</b>.
 		</p>
 		<p>
@@ -96,7 +96,12 @@
           Sempre que for utilizá-la, esterilize-a adequadamente para não contaminar seu açucar invertido. Lave-a após seu uso. Essa seringa deve ter pelo menos a capacidade de 6ml para facilitar as coisas.</p>
 
           <h4>Quantidade de açucar por garrafa</h4>
-          <p align="justify">A quantidade de açucar invertido por garrafa varia conforme o estilo, mas não se preocupe, basta seguir as tabelas ao final da página.</p>
+          <p align="justify">A quantidade de açucar invertido por garrafa varia conforme o estilo e você pode usar a seguinte equação:<br/>
+          <b>gL = V/0.286</b><br/>
+          O "V" é o volume. Supondo que você queira uma cerveja com 2.5 de volume de CO²:<br/>
+          gL = 2.5/0.286 = 8,7<br/>
+          É comum utilizar 8g/L e facilita um bocado, mas se quiser ser preciso, em uma garrafa inglesa de 500ml você colocaria 4.35ml, contado na seringa.
+          </p>
         </div>
 
 		<div class="page-header">
