@@ -2,8 +2,8 @@
 #include <SmingCore/SmingCore.h>
 #include <Libraries/BMP180/BMP180.h>
 
-#define WIFI_SSID "SuhankoFamily" // Put you SSID and Password here
-#define WIFI_PWD "fsjmr112"
+#define WIFI_SSID "SeuSSID" // Put you SSID and Password here
+#define WIFI_PWD "SuaSenhaWiFi"
 
 //1 Pascal = 0,000145038 PSI
 #define PSI 0.000145038
@@ -31,12 +31,10 @@ float CO2                  = 0.0;//carbonatacao selecionada
 float pressure_target      = 0.0;//PSI necessário para atingir o objetivo
 float farenheit            = 0.0;//guarda a conversão de Celsius para Fahrenheit
 
-//vetores para armazenar os valores e nomes dos estilos
-//Vector <String> check_style;
-//Vector <float>  value_style;
-
 BMP180 barometer;//instância do barômetro
 Timer getValues;//timer de leitura do BMP180
+
+void ap_if();
 
 float calculateCO2(float volume){
     float pressure_needed = -16.6999 - 0.0101059 * farenheit + 0.00116512 * pow(farenheit,2) + 0.173354 * farenheit * volume + 4.24267 * volume - 0.0684226 * pow(volume,2);
@@ -77,11 +75,13 @@ void bmp180CB(){
     Serial.println(" PSI");
     Serial.println("-------------------");
     
-    if (pressure_target <= pressure_in_psi){
-        digitalWrite(LED_PIN,HIGH);
+    if (pressure_target <= pressure_in_psi && pressure_target > 0){
+        if (activate_alarm){
+            digitalWrite(LED_PIN,HIGH);
+        }
         carbonation_status = "Concluido";
     }
-    else if (CO2 < 0){
+    else if (pressure_target < 0){
         carbonation_status = "Não iniciado";
     }
     else{
@@ -95,7 +95,7 @@ void onIndex(HttpRequest &request, HttpResponse &response)
     bool led = request.getQueryParameter("led") == "on";
     //digitalWrite(LED_PIN, led);
     activate_alarm = led;
-
+    
     beer_style = request.getQueryParameter("style");
 
     if (beer_style == "english"){
@@ -117,22 +117,6 @@ void onIndex(HttpRequest &request, HttpResponse &response)
         CO2 = DANGEROUS;
     }
     bmp180CB();
-    /*
-    if (check_style.contains(beer_style)){
-        CO2 = value_style.at(check_style.indexOf(beer_style));
-        Serial.println("###############");
-        Serial.print("CO2: ");
-        Serial.println(CO2);
-        Serial.println("###############");
-        Serial.println("###############");
-    }
-    else{
-        Serial.println("#########################");
-        Serial.println("FALHOU");
-        Serial.println(value_style.at(check_style.indexOf(beer_style)));
-        Serial.println("###############");
-    }
-    */
 
     TemplateFileStream *tmpl = new TemplateFileStream("index.html");
     auto &vars               = tmpl->variables();
@@ -143,6 +127,12 @@ void onIndex(HttpRequest &request, HttpResponse &response)
     vars["BEER_STYLE"]       = beer_style;
     vars["PSI_TO_TARGET"]    = pressure_target;
     vars["CARB_STATUS"]      = carbonation_status;
+    if (activate_alarm){
+        vars["LED_STATUS"]   = "ON";
+    }
+    else{
+        vars["LED_STATUS"]   = "OFF";
+    }
     response.sendTemplate(tmpl); // this template object will be deleted automatically
 }
 
@@ -177,35 +167,38 @@ void startWebServer()
 
 	Serial.println("\r\n=== WEB SERVER STARTED ===");
 	Serial.println(WifiStation.getIP());
+        //Serial.println(WifiAccessPoint.getIP());
 	Serial.println("==============================\r\n");
 }
 
 Timer downloadTimer;
 HttpClient downloadClient;
 int dowfid = 0;
-void downloadContentFiles()
-{
-	if (downloadClient.isProcessing()) return; // Please, wait.
+void downloadContentFiles(){
+    if (downloadClient.isProcessing()){
+        return; // Please, wait.  
+    }  
 
-	if (downloadClient.isSuccessful())
-		dowfid++; // Success. Go to next file!
-	downloadClient.reset(); // Reset current download status
+    if (downloadClient.isSuccessful()){
+        dowfid++; // Success. Go to next file!
+    }
 
-	if (dowfid == 0)
-	    //downloadClient.downloadFile("http://simple.anakod.ru/templates/index.html");
-            downloadClient.downloadFile("http://192.168.1.7/index.html");
-	else if (dowfid == 1)
-	    //downloadClient.downloadFile("http://simple.anakod.ru/templates/bootstrap.css.gz");
-            downloadClient.downloadFile("http://192.168.1.7/bootstrap.css.gz");
-	else if (dowfid == 2)
-	    //downloadClient.downloadFile("http://simple.anakod.ru/templates/jquery.js.gz");
-            downloadClient.downloadFile("http://192.168.1.7/jquery.js.gz");
-	else
-	{
-		// Content download was completed
-		downloadTimer.stop();
-		startWebServer();
-	}
+    downloadClient.reset(); // Reset current download status
+
+    if (dowfid == 0){
+        downloadClient.downloadFile("http://192.168.1.7/index.html");
+    }
+    else if (dowfid == 1){
+        downloadClient.downloadFile("http://192.168.1.7/bootstrap.css.gz");
+    }
+    else if (dowfid == 2){
+        downloadClient.downloadFile("http://192.168.1.7/jquery.js.gz");
+    }
+    else{
+            // Content download was completed
+            downloadTimer.stop();   
+            startWebServer();
+    }
 }
 
 // Will be called when WiFi station was connected to AP
@@ -220,26 +213,10 @@ void connectOk()
 	}
 	else
 	{
-		startWebServer();
+	    startWebServer();
 	}
 }
-/*
-void loadVectors(){
-    check_style.add("english");
-    check_style.add("american");
-    check_style.add("belgian");
-    check_style.add("germany");
-    check_style.add("high");
-    check_style.add("dangerous");
-    
-    value_style.add(ENGLISH);
-    value_style.add(AMERICAN);
-    value_style.add(BELGIAN);
-    value_style.add(GERMANY);
-    value_style.add(STRONG);
-    value_style.add(DANGEROUS);
-}
-*/
+
 void sta_if(){
     WifiStation.enable(true);
     WifiStation.config(WIFI_SSID, WIFI_PWD);
@@ -249,6 +226,12 @@ void sta_if(){
     WifiStation.waitConnection(connectOk);
 }
 
+void ap_if(){
+    WifiStation.disconnect();
+    WifiStation.enable(false);
+    WifiAccessPoint.enable(true);
+    WifiAccessPoint.config("BeerCO2","dobitaobyte",AUTH_WPA2_PSK,false,11,2);
+}
 void init(){
     pinMode(LED_PIN, OUTPUT);
 
@@ -274,5 +257,5 @@ void init(){
     Serial.println((int)System.getCpuFrequency());
     
     Serial.print("Iniciando leitura");
-    getValues.initializeMs(2000,bmp180CB).start();
+    getValues.initializeMs(60000,bmp180CB).start();
 }
